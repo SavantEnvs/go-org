@@ -1,0 +1,10 @@
+# Mined target (docs/procedures/MINING.md): the harness on the commit before upstream's fix f69b043.
+# seed-from: https://app.mayhem.security/savantenvs/go-org/go-org-org-fuzz
+project: savantenvs/go-org
+target: go-org-org-fuzz-mined-20970ec
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+  - file://mayhem/go-org-org-fuzz-mined-20970ec/testsuite
+cmds:
+  - cmd: /mayhem/go-org-org-fuzz
+    libfuzzer: true
