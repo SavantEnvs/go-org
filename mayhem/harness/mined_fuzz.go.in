@@ -1,0 +1,41 @@
+//go:build gofuzz
+// +build gofuzz
+
+package org
+
+import (
+	"bytes"
+	"strings"
+)
+
+// FuzzMined is org.Fuzz with the parse step run outside Parse's recover(): Parse turns a parser
+// panic into d.Error and drops the stack, so the crash would carry no frame in the parser code.
+// build.sh copies this file to org/mined_fuzz.go (tests exclude it by the gofuzz tag).
+func FuzzMined(input []byte) int {
+	conf := New().Silent()
+	outlineSection := &Section{}
+	d := &Document{
+		Configuration:  conf,
+		Outline:        Outline{outlineSection, outlineSection, 0},
+		BufferSettings: map[string]string{},
+		NamedNodes:     map[string]Node{},
+		Links:          map[string]string{},
+		Macros:         map[string]string{},
+	}
+	d.tokenize(bytes.NewReader(input))
+	_, nodes := d.parseMany(0, func(d *Document, i int) bool { return i >= len(d.tokens) })
+	d.Nodes = nodes
+	orgOutput, err := d.Write(NewOrgWriter())
+	if err != nil {
+		panic(err)
+	}
+	htmlOutputA, err := d.Write(NewHTMLWriter())
+	if err != nil {
+		panic(err)
+	}
+	htmlOutputB, err := conf.Parse(strings.NewReader(orgOutput), "").Write(NewHTMLWriter())
+	if htmlOutputA != htmlOutputB {
+		panic("rendered org results in different html than original input")
+	}
+	return 0
+}
